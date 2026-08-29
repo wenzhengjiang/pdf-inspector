@@ -1,0 +1,29 @@
+name: Verify darwin-x64 build
+on:
+  push:
+    branches: [verify-darwin-x64]
+jobs:
+  build-and-smoke:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.98.0"
+          targets: x86_64-apple-darwin
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        working-directory: napi
+        run: bun install
+      - name: Build native addon
+        working-directory: napi
+        run: bunx napi build --platform --release --target x86_64-apple-darwin
+      - name: Inspect
+        working-directory: napi
+        run: ls -la *.node && file *.node && lipo -archs *.node
+      - name: Smoke test
+        working-directory: napi
+        run: node test.mjs
